@@ -207,3 +207,96 @@ std::thread t(proccess_big_object,std::move(p));
 
 std::thread 所有权可以在多个实例中互相转移，因为这些实例是可移动(movable)且不可复制(aren't copyable)
 在同一时间点，就能保证只关联一个执行线程；同时，也允许程序员能在不同的对象之间转移所有权
+
+转移线程所有权
+
+```
+void some_function();
+void some_other_function();
+std::thread t1(some_function);
+std::thread t2=std::move(t1);         // t1的所有权转移给t2
+t1=std::thread(some_other_fuction);   // 
+std::thread t3; 
+t3=std::move(t2);                     // t2的所有权转移给t3
+t1=std::move(t3);                     // 
+```
+
+线程的所有权可以在函数外进行转移，返回值是std::thread对象
+```
+std::thread f(){
+  void some_function();
+  return std::thread(some_function);
+}
+
+std::thread g(){
+  void some_other_function();
+  std::thread t(some_other_function,42);
+  return t;
+}
+```
+线程的所有权可以在函数内部传递，作为参数传递
+```
+void f(thread t);
+void g(){
+  void some_function();
+  f(std::thread(some_function));
+  std::thread t(some_function);
+  f(std::move(t));
+}
+```
+
+scoped_thread类
+```
+class scoped_thread{
+  std::thread t_;
+
+public:
+  expilict scoped_thread(std::thread t):t(std::move(t_)){
+    if(!t_.joinable()){
+      throw std::logic_error(“No thread”);
+    }
+  }
+  ~scoped_thread(){
+    t_.join();
+  }
+  scoped_thread(scoped_thread const&)=delete;
+  scoped_thread& operator=(scoped_thread const&)=delete;
+}
+
+struct func;
+
+void f(){
+  int some_local_state;
+  scoped_thread t(std::thread(func(some_local_state)));
+  do_something_in_current_thread();
+}
+```
+
+scoped_thread对象将会销毁，然后加入构造函数创建的线程对象中去
+
+量产线程
+```
+void do_work(unsigned id);
+
+void f(){
+  std::vector<std::thread> threads;
+  for(unsigned i=0;i<20;i++){
+    threads.push_back(std::thread(do_work,i)); // 产生线程
+  }
+  std::for_each(threads.begin(), threads.end(), std::men_fn(&std::thread::join)); // 对于每个线程调用join()
+  // std::mem_fn 函数适配器，可以将成员函数封装成可调用对象
+  // #include <functional>
+  // std::mem_fn(成员函数指针)
+}
+```
+
+运行时决定线程数量
+
+std::thread::hardware_concurrency() 返回能够同时并发在一个程序中的线程数量
+多核系统中，返回值可以是CPU核芯的数量
+
+识别线程
+std::thread::id 
+  对于 std::thread get_id() 来直接获取
+  在当前线程调用std::this_thread::get_id()
+  
