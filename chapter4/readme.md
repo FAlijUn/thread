@@ -44,3 +44,41 @@ std::launch::defered 函数调用被延迟到wait()或get()函数调用时执行
 std::launch::async 函数必须在所在的独立线程上执行
 
 将任务包装入一个std::packaged_task<>
+
+使用std::promises
+当你有一个应用，需要处理很多网络连接，会使用不同线程尝试连接每一个接口
+一个线程处理多个连接事件，不同的端口连接的数据包以乱序的方式进行处理
+
+std::promises和std::future
+线程间通信，一个线程 
+
+使用多个std::shared_future对象来避免数据竞争
+
+### 限定等待时间
+* 现在时间 std::chrono::system_clock::now() 返回系统时钟的当前时间
+* 时钟类型
+* 时钟节拍 被指定为1/x 一个时钟一秒有25个节拍 std::ratio<1,25> 周期 std::ratio(5,2)
+* 时延 std::chrono::duration<>
+* 时间点 std::chrono::time_point<>
+  ```
+    auto start=std::chrono::high_resolution_clock::now();
+    do_something();
+    auto stop=std::chrono::high_resolution_clock::now();
+    std::cout<< "do_something() tool "
+      << std::chrono::duration<double, std::chrono::seconds>(stop-start).count()
+      << "second" << std::endl
+  ```
+
+使用同步操作简化代码
+同步工具的的使用构建块
+函数化编程FP, 函数结果只依赖于传入的函数的参数，不依赖外部的状态
+```
+template<typename F, typename A>
+std::future<std::result_of<F(A&&)>>::type result_type;
+std::packaged_task<result_type(A&&)> task(std::move(f));
+std::future<result_type> res(task.get_future());
+std::thread t(std::move(task), std::move(a));
+t.detch();
+return res;
+```
+右值引用和移动语义
