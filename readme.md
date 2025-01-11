@@ -24,3 +24,5 @@
 运行越多的线程，操作系统就需要做越多的上下文切换
 
 原子操作库，可以用于直接控制单个位、字节、内部线程间同步
+
+https://nj.gitbooks.io/c/content/content/chapter7/chapter7-chinese.html
