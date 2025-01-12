@@ -26,3 +26,73 @@
 原子操作库，可以用于直接控制单个位、字节、内部线程间同步
 
 https://nj.gitbooks.io/c/content/content/chapter7/chapter7-chinese.html
+
+## 左值右值 右值引用
+赋值表达式，等号左边右边
+可以取地址有名字的是左值
+不能取地址没有名字的是右值
+
+右值 将亡值和纯右值
+纯右值 临时变量(运算表达式，lamda表达式，类型转换函数的返回值)，不和对象关联的字面值常量
+将亡值 将要被移动的量，一个已经被销毁或者即将被销毁的的对象
+右值引用，对一个右值进行引用
+```
+T&& a = ReturnRvalue()
+ReturnRvalue() 返回一个右值
+声明一个a 的右值引用 值等于ReturnRvalue函数返回的临时变量的值 
+```
+左值引用是 具有名字的变量值的别名
+右值引用是 不具有名字的变量的别名
+
+ReturnRvalue函数返回值在表达式结束之后，生命周期终止
+右值的生命周期又绑定在右值引用a上
+
+左值引用一般不能够绑定到右值上，会产生未定义行为
+使用const 左值引用，可以绑定到左值，右值甚至是常量对象
+常量左值引用右值，减小临时对象构造函数的开销
+
+
+万能引用T&& T&&&&
+既能够绑定左值又能够绑定右值的引用类型
+通过模板类型推导的方式
+使得函数能够接受并且转发给定的参数，保持原始的数据类别
+```
+template <typename T>
+void f(T&& arg){
+  std::cout << arg << std::endl;
+}
+```
+
+```
+T&&a = ReturnRvalue()
+a 是右值引用，直接绑定ReturnRvalue返回的临时对象
+T a = ReturnRvalue()
+b 是临时值构造在表达式结束之后会析构
+const T & 是万能引用 常量左值可以减少开销
+```
+
+#include<utility>
+std::move() 强制转换成右值，将左值转换成右值
+使用std::move()转化的右值不能再使用
+可以接受右值的右值引用本身是一个左值
+移动语义一定要修改临时变量的值
+```
+  Moveable(const Moveable &&)
+  const Moveabel ReturnRvalue
+```
+使临时变量常量化，会导致无法使用移动语义
+对于移动构造抛出异常是危险的，移动语义没有完成导致一些指针成为空悬指针添加 noexpect
+返回值优化，直接替换没有构造和移动
+
+完美转发
+在函数模板中，完全依照模板的参数的类型，将参数传递给函数模板调用的另外一个函数
+template<typename T>
+void wrapper(T&& arg){
+  // 保持原始数据类型
+  f(std::forward<T> arg)
+}
+int main(){
+  int x =10;
+  warpper(x);
+  warpper(20);
+}
