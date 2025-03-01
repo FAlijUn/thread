@@ -66,6 +66,7 @@
     "iomanip": "cpp",
     "sstream": "cpp",
     "cinttypes": "cpp",
-    "typeindex": "cpp"
+    "typeindex": "cpp",
+    "shared_mutex": "cpp"
   }
 }
